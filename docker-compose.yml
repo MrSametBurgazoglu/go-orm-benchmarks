@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  ent-postgres:
+    image: postgres:15.4
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: main
+    ports:
+      - "5432:5432"
+    volumes:
+      - ent_postgres_data:/var/lib/postgresql/data
+
+  gorm-postgres:
+    image: postgres:15.4
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: main
+    ports:
+      - "5434:5432"
+    volumes:
+      - gorm_postgres_data:/var/lib/postgresql/data
+
+  sqlx-postgres:
+    image: postgres:15.4
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: main
+    ports:
+      - "5433:5432"
+    volumes:
+      - sqlx_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ent_postgres_data:
+  gorm_postgres_data:
+  sqlx_postgres_data:
