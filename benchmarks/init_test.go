@@ -3,10 +3,12 @@ package benchmarks_test
 import (
 	"context"
 	"fmt"
-
 	"github.com/FournyP/go-orm-benchmarks/ent"
+	"github.com/FournyP/go-orm-benchmarks/enterprise/db_models"
+	"github.com/FournyP/go-orm-benchmarks/enterprise/models"
 	"github.com/FournyP/go-orm-benchmarks/gormmodels"
 	"github.com/FournyP/go-orm-benchmarks/sqlxmodels"
+	"github.com/MrSametBurgazoglu/enterprise/migrate"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
@@ -47,7 +49,7 @@ func GetGORMClient() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&gormmodels.User{}, &gormmodels.Post{}, &gormmodels.Comment{})
+	err = db.AutoMigrate(gormmodels.User{}, gormmodels.Post{}, gormmodels.Comment{})
 	if err != nil {
 		return nil, fmt.Errorf("failed creating schema resources: %v", err)
 	}
@@ -67,6 +69,24 @@ func GetSqlxClient() (*sqlx.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed creating schema resources: %v", err)
 	}
+
+	return db, nil
+}
+
+func GetEnterpriseClient() (models.IDatabase, error) {
+	dbUrl := "postgresql://root:root@127.0.0.1:5435/main?search_path=public&sslmode=disable"
+	db, err := models.NewDB(dbUrl)
+	if err != nil {
+		panic(err)
+	}
+	err = DeleteEnterpriseDatabase(db)
+	if err != nil {
+		panic(err)
+	}
+	migrate.AutoApplyMigration(context.TODO(), dbUrl, "migration",
+		db_models.Post(),
+		db_models.Comment(),
+		db_models.User())
 
 	return db, nil
 }
@@ -101,6 +121,24 @@ func TruncateGORMDatabase(db *gorm.DB) error {
 
 func TruncateSqlxDatabase(db *sqlx.DB) error {
 	_, err := db.Exec("TRUNCATE TABLE comments, posts, users")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TruncateEnterpriseDatabase(db models.IDatabase) error {
+	_, err := db.Exec(context.TODO(), "TRUNCATE TABLE \"comments\", \"posts\", \"users\"")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteEnterpriseDatabase(db models.IDatabase) error {
+	_, err := db.Exec(context.TODO(), "DROP TABLE \"comments\", \"posts\", \"users\"")
 	if err != nil {
 		return err
 	}
